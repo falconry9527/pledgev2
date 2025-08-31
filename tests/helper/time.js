@@ -1,5 +1,6 @@
-
-const BN = require('bn.js');
+const Web3 = require('web3');
+const web3 = new Web3('https://mainnet.infura.io/v3/your-project-id'); 
+const BN = web3.utils.BN;
 async function latestBlock () {
   const block = await web3.eth.getBlock('latest');
   return new BN(block.number);

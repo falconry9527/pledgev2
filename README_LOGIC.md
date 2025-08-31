@@ -2,6 +2,11 @@
 pledge V2 contract
 
 # 逻辑整理
+## 各个合约的作用
+```
+PledgePool: 借贷主协议
+
+```
 
 ## PledgePool 安全
 ```

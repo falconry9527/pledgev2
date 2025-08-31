@@ -13,11 +13,11 @@ describe("PledgePool", function (){
         // oracle
         const bscPledgeOracleToken = await ethers.getContractFactory("MockOracle");
         bscPledgeOracle = await bscPledgeOracleToken.deploy();
-        //spAddress,jpAddress
+        //部署2个 erc20的币：spAddress,jpAddress
         const spToken = await ethers.getContractFactory("DebtToken");
-        spAddress = await spToken.deploy("spBUSD_1","spBUSD_1");
+        spAddress = await spToken.deploy("spBUSD_1","spBUSD_1",minter.address);
         const jpToken = await ethers.getContractFactory("DebtToken");
-        jpAddress = await jpToken.deploy("jpBTC_1", "jpBTC_1");
+        jpAddress = await jpToken.deploy("jpBTC_1", "jpBTC_1",alice.address);
         // swap router Address
         [weth, factory, router, busdAddress, btcAddress] = await initAll(minter);
         // pledgeAdddress
@@ -50,7 +50,6 @@ describe("PledgePool", function (){
         expect(await spAddress.balanceOf(alice.address)).to.equal(BigInt(100000000).toString());
         expect(await jpAddress.totalSupply()).to.equal(BigInt(100000000).toString());
         expect(await jpAddress.balanceOf(alice.address)).to.equal(BigInt(100000000).toString());
-
     });
 
     it("Create Pool info",async function (){

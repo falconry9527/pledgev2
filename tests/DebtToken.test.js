@@ -8,7 +8,8 @@ describe("DebtToken",function () {
     beforeEach(async ()=>{
         [minter, alice, bob, carol, _] = await ethers.getSigners();
         const DebtToken = await ethers.getContractFactory("DebtToken");
-        debtToken = await DebtToken.deploy("spBUSD_1", "spBUSD_1");
+        debtToken = await DebtToken.deploy("spBUSD_1", "spBUSD_1",minter.address);
+        console.log("debtToken deployed to:", await debtToken.address);
     });
 
     it("check if mint right", async function() {

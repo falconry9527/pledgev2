@@ -696,8 +696,8 @@
       ]
     },
     "/Users/thor/VsProjects/pledgeV2/contracts/pledge/DebtToken.sol": {
-      "lastModificationDate": 1756627206655,
-      "contentHash": "747f53f2fecd2e1d57478b78603a0a45",
+      "lastModificationDate": 1756646020845,
+      "contentHash": "5a28c3c8cd6b52a0e35a803addc9782e",
       "sourceName": "contracts/pledge/DebtToken.sol",
       "solcConfig": {
         "version": "0.6.12",

@@ -2,7 +2,6 @@ const { expect } = require("chai");
 const { show } = require("./helper/meta.js");
 const BN = require('bn.js');
 
-
 describe("BscPledgeOracle", function (){
     let bscPledgeOracle, busdAddrress,btcAddress;
     beforeEach(async ()=>{

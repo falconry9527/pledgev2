@@ -10,7 +10,6 @@ contract DebtToken is ERC20, AddressPrivileges {
 
     constructor(string memory _name, string memory _symbol, address multiSignature) public ERC20(_name, _symbol) AddressPrivileges(multiSignature) {
     }
-
     /**
       * @notice mint the token
       * @dev function to mint token for an asset
