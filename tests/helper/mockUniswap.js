@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const BN = web3.utils.BN;
+// const BN = web3.utils.BN;
 
 async function mockUniswap (minter, weth) {
     const UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");

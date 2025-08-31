@@ -1,4 +1,5 @@
-const BN = web3.utils.BN;
+// const BN = require('bn.js');
+
 const zeroAddress = "0x0000000000000000000000000000000000000000"
 
 async function initFactory(minter) {

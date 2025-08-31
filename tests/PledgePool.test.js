@@ -3,7 +3,6 @@ const { show } = require("./helper/meta.js");
 const { initAll } = require("./helper/init.js");
 const {latestBlock, advanceBlockTo, latestBlockNum, stopAutoMine, latest, increase} = require("./helper/time.js");
 const {mockUniswap, mockAddLiquidity,mockSwap} = require('./helper/mockUniswap.js')
-const BN = web3.utils.BN;
 
 describe("PledgePool", function (){
     let busdAddress, btcAddress, spAddress,jpAddress, bscPledgeOracle, pledgeAddress;

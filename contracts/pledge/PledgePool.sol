@@ -35,7 +35,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     uint256 public lendFee;
     uint256 public borrowFee;
 
-        // 每个池的基本信息
+    // 每个池的基本信息
     struct PoolBaseInfo{
         uint256 settleTime;         // 结算时间
         uint256 endTime;            // 结束时间
@@ -54,7 +54,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     // total base pool.
     PoolBaseInfo[] public poolBaseInfo;
 
-       // 每个池的数据信息
+    // 每个池的数据信息
     struct PoolDataInfo{
         uint256 settleAmountLend;       // 结算时的实际出借金额
         uint256 settleAmountBorrow;     // 结算时的实际借款金额
@@ -66,7 +66,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     // total data pool
     PoolDataInfo[] public poolDataInfo;
 
-       // 借款用户信息
+    // 借款用户信息
     struct BorrowInfo {
         uint256 stakeAmount;           // 当前借款的质押金额
         uint256 refundAmount;          // 多余的退款金额
@@ -76,7 +76,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     // Info of each user that stakes tokens.  {user.address : {pool.index : user.borrowInfo}}
     mapping (address => mapping (uint256 => BorrowInfo)) public userBorrowInfo;
 
-      // 借款用户信息
+    // 借款用户信息
     struct LendInfo {
         uint256 stakeAmount;          // 当前借款的质押金额
         uint256 refundAmount;         // 超额退款金额

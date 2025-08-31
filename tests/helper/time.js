@@ -1,5 +1,5 @@
 
-const BN = web3.utils.BN;
+const BN = require('bn.js');
 async function latestBlock () {
   const block = await web3.eth.getBlock('latest');
   return new BN(block.number);
