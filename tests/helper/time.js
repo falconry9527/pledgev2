@@ -11,7 +11,6 @@ async function latestBlockNum () {
   return (new BN(block.number)).toNumber();
 }
 
-
 async function showBlock () {
     const block = await web3.eth.getBlock('latest');
     console.log("Block number: " + new BN(block.number).toString());
