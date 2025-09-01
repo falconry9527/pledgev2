@@ -6,8 +6,9 @@ pledge V2 contract
 ```
 npm install
 npx hardhat compile
-npx hardhat test
-npx hardhat ignition deploy ./ignition/modules/PledgePool.js
+npx hardhat test tests/DebtToken.test.js 
+npx hardhat test tests/BscPledgeOracle.test.js
+npx hardhat test tests/PledgePool.test.js
 
 ```
 
