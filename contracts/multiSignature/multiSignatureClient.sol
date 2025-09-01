@@ -10,6 +10,7 @@ contract multiSignatureClient{
     uint256 private constant multiSignaturePositon = uint256(keccak256("org.multiSignature.storage"));
     uint256 private constant defaultIndex = 0;
 
+    // 合约部署的时候，会设置root地址
     constructor(address multiSignature) public {
         require(multiSignature != address(0),"multiSignatureClient : Multiple signature contract address is zero!");
         saveValue(multiSignaturePositon,uint256(multiSignature));
@@ -19,6 +20,7 @@ contract multiSignatureClient{
         return address(getValue(multiSignaturePositon));
     }
 
+    // 是否有效请求，必须多签账户的n个账户同意
     modifier validCall(){
         checkMultiSignature();
         _;

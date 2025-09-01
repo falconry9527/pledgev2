@@ -9,6 +9,9 @@ import "../interface/IBscPledgeOracle.sol";
 import "../interface/IUniswapV2Router02.sol";
 import "../multiSignature/multiSignatureClient.sol";
 
+// multiSignatureClient 多签账户 :validCall
+// ReentrancyGuard 重入攻击： nonReentrant
+// SafeTransfer  安全装置 getPayableAmount _redeem
 contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
     using SafeMath for uint256;

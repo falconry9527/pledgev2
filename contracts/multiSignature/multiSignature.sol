@@ -44,14 +44,14 @@ contract multiSignature  is multiSignatureClient {
     // 多签成员
     address[] public signatureOwners;
     uint256 public threshold;
-    // 应用的多签信息
+    // 申请的多签信息
     struct signatureInfo {
         // 合约地址
         address applicant;
         // 多签成员
         address[] signatures;
     }
-    // 应用ID-> 应用的多签信息
+    // 申请ID-> 申请的多签信息
     mapping(bytes32=>signatureInfo[]) public signatureMap;
     event TransferOwner(address indexed sender,address indexed oldOwner,address indexed newOwner);
     event CreateApplication(address indexed from,address indexed to,bytes32 indexed msgHash);
@@ -75,7 +75,8 @@ contract multiSignature  is multiSignatureClient {
         require(signatureOwners.isEligibleAddress(msg.sender),"Multiple Signature : caller is not in the ownerList!");
         _;
     }
-    //========================== 某个应用的多签用户操作 =========================
+    
+    //========================== 某个申请的多签用户操作 =========================
     // 创建多签钱包
     function createApplication(address to) external returns(uint256) {
         bytes32 msghash = getApplicationHash(msg.sender,to);
@@ -96,8 +97,8 @@ contract multiSignature  is multiSignatureClient {
         emit RevokeApplication(msg.sender,msghash,defaultIndex);
         signatureMap[msghash][defaultIndex].signatures.removeWhiteListAddress(msg.sender);
     }
-
-    
+   
+    // 获取某个申请的有多少用户
     function getValidSignature(bytes32 msghash,uint256 lastIndex) external view returns(uint256){
         signatureInfo[] storage info = signatureMap[msghash];
         for (uint256 i=lastIndex;i<info.length;i++){
