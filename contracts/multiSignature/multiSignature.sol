@@ -4,7 +4,6 @@ pragma solidity 0.6.12;
 
 import "./multiSignatureClient.sol";
 
-
 library whiteListAddress{
     // add whiteList
     function addWhiteListAddress(address[] storage whiteList,address temp) internal{
@@ -42,12 +41,17 @@ library whiteListAddress{
 contract multiSignature  is multiSignatureClient {
     uint256 private constant defaultIndex = 0;
     using whiteListAddress for address[];
+    // 多签成员
     address[] public signatureOwners;
     uint256 public threshold;
+    // 应用的多签信息
     struct signatureInfo {
+        // 合约地址
         address applicant;
+        // 多签成员
         address[] signatures;
     }
+    // 应用ID-> 应用的多签信息
     mapping(bytes32=>signatureInfo[]) public signatureMap;
     event TransferOwner(address indexed sender,address indexed oldOwner,address indexed newOwner);
     event CreateApplication(address indexed from,address indexed to,bytes32 indexed msgHash);
@@ -60,12 +64,19 @@ contract multiSignature  is multiSignatureClient {
         threshold = limitedSignNum;
     }
 
+    // 修改多签成员
     function transferOwner(uint256 index,address newOwner) public onlyOwner validCall{
         require(index<signatureOwners.length,"Multiple Signature : Owner index is overflow!");
         emit TransferOwner(msg.sender,signatureOwners[index],newOwner);
         signatureOwners[index] = newOwner;
     }
-
+    // 重写 onlyOwner ，
+    modifier onlyOwner{
+        require(signatureOwners.isEligibleAddress(msg.sender),"Multiple Signature : caller is not in the ownerList!");
+        _;
+    }
+    //========================== 某个应用的多签用户操作 =========================
+    // 创建多签钱包
     function createApplication(address to) external returns(uint256) {
         bytes32 msghash = getApplicationHash(msg.sender,to);
         uint256 index = signatureMap[msghash].length;
@@ -74,16 +85,19 @@ contract multiSignature  is multiSignatureClient {
         return index;
     }
 
+    // 新增多签成员
     function signApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit SignApplication(msg.sender,msghash,defaultIndex);
         signatureMap[msghash][defaultIndex].signatures.addWhiteListAddress(msg.sender);
     }
 
+    // 移除 多签成员
     function revokeSignApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit RevokeApplication(msg.sender,msghash,defaultIndex);
         signatureMap[msghash][defaultIndex].signatures.removeWhiteListAddress(msg.sender);
     }
 
+    
     function getValidSignature(bytes32 msghash,uint256 lastIndex) external view returns(uint256){
         signatureInfo[] storage info = signatureMap[msghash];
         for (uint256 i=lastIndex;i<info.length;i++){
@@ -105,11 +119,6 @@ contract multiSignature  is multiSignatureClient {
 
     function getApplicationHash(address from,address to) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(from, to));
-    }
-
-    modifier onlyOwner{
-        require(signatureOwners.isEligibleAddress(msg.sender),"Multiple Signature : caller is not in the ownerList!");
-        _;
     }
 
     modifier validIndex(bytes32 msghash,uint256 index){

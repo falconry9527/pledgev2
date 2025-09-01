@@ -31,19 +31,18 @@ contract multiSignatureClient{
         }
         bytes32 msgHash = keccak256(abi.encodePacked(msg.sender, address(this)));
         address multiSign = getMultiSignatureAddress();
-//        uint256 index = getValue(uint256(msgHash));
         uint256 newIndex = IMultiSignature(multiSign).getValidSignature(msgHash,defaultIndex);
         require(newIndex > defaultIndex, "multiSignatureClient : This tx is not aprroved");
-//        saveValue(uint256(msgHash),newIndex);
     }
 
+    // 直接存储在 storge 的卡槽（slot）里面
     function saveValue(uint256 position,uint256 value) internal
     {
         assembly {
             sstore(position, value)
         }
     }
-
+    // 从卡槽（slot） 读取数据
     function getValue(uint256 position) internal view returns (uint256 value) {
         assembly {
             value := sload(position)
