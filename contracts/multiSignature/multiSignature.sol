@@ -51,13 +51,14 @@ contract multiSignature  is multiSignatureClient {
         // 多签成员
         address[] signatures;
     }
-    // 申请ID-> 申请的多签信息
+    // 权限（请求地址-> 调用的合约地址）
     mapping(bytes32=>signatureInfo[]) public signatureMap;
     event TransferOwner(address indexed sender,address indexed oldOwner,address indexed newOwner);
     event CreateApplication(address indexed from,address indexed to,bytes32 indexed msgHash);
     event SignApplication(address indexed from,bytes32 indexed msgHash,uint256 index);
     event RevokeApplication(address indexed from,bytes32 indexed msgHash,uint256 index);
 
+    //==========================  设置和修改签名管理人员地址 =========================
     constructor(address[] memory owners,uint256 limitedSignNum) multiSignatureClient(address(this)) public {
         require(owners.length>=limitedSignNum,"Multiple Signature : Signature threshold is greater than owners' length!");
         signatureOwners = owners;
@@ -76,8 +77,8 @@ contract multiSignature  is multiSignatureClient {
         _;
     }
     
-    //========================== 某个申请的多签用户操作 =========================
-    // 创建多签钱包
+    //==========================  用户申请权限（签名）/管理员签名权限 相关 =========================
+    // 创建申请，请求签证
     function createApplication(address to) external returns(uint256) {
         bytes32 msghash = getApplicationHash(msg.sender,to);
         uint256 index = signatureMap[msghash].length;
@@ -86,19 +87,19 @@ contract multiSignature  is multiSignatureClient {
         return index;
     }
 
-    // 新增多签成员
+    // 管理员签名（某个申请）
     function signApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit SignApplication(msg.sender,msghash,defaultIndex);
         signatureMap[msghash][defaultIndex].signatures.addWhiteListAddress(msg.sender);
     }
 
-    // 移除 多签成员
+    // 管理员移除签名（某个申请）
     function revokeSignApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit RevokeApplication(msg.sender,msghash,defaultIndex);
         signatureMap[msghash][defaultIndex].signatures.removeWhiteListAddress(msg.sender);
     }
    
-    // 获取某个申请的有多少用户
+    
     function getValidSignature(bytes32 msghash,uint256 lastIndex) external view returns(uint256){
         signatureInfo[] storage info = signatureMap[msghash];
         for (uint256 i=lastIndex;i<info.length;i++){
@@ -123,6 +124,7 @@ contract multiSignature  is multiSignatureClient {
     }
 
     modifier validIndex(bytes32 msghash,uint256 index){
+        // 同意管理员 数目，要小于总的
         require(index<signatureMap[msghash].length,"Multiple Signature : Message index is overflow!");
         _;
     }

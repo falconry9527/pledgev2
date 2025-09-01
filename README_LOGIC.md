@@ -15,7 +15,11 @@ SafeTransfer：安全转账： 如果转账失败会自定回滚 ： safeTransfe
 MultiSignatureClient: 多签工具
 ```
 
-## PledgePool 主要方法
+## multiSignatureClient 权限多签
 ```
+// bytes32 （请求地址-> 调用的合约地址）： 所有方法的调用权限
+ mapping(bytes32=>signatureInfo[]) public signatureMap;
+
+ 
 
 ```
