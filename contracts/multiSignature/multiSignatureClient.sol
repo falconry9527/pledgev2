@@ -41,6 +41,7 @@ contract multiSignatureClient{
     }
 
     function checkMultiSignature() internal view {
+        // 获取当前调用附带的以太币数量（以wei为单位）
         uint256 value;
         assembly {
             value := callvalue()
