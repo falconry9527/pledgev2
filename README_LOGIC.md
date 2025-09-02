@@ -17,7 +17,8 @@ MultiSignatureClient: 多签工具
 ## multiSignatureClient 权限多签
 ```
 // bytes32 （请求地址-> 调用的合约地址）： 所有方法的调用权限
+// signatureInfo[] 允许多次申请，只要有其中一个申请允许就可以了
  mapping(bytes32=>signatureInfo[]) public signatureMap;
-
- 
+ validIndex :    请求的有效性检查，防止数组角标越界
+ validCall(checkMultiSignature) : 请求数组中，是否有1个是过签的
 ```

@@ -10,7 +10,7 @@ contract multiSignatureClient{
     uint256 private constant multiSignaturePositon = uint256(keccak256("org.multiSignature.storage"));
     uint256 private constant defaultIndex = 0;
 
-    // 合约部署的时候，会设置 初始化账户 地址
+    // 合约部署的时候，把合约多签合约地址存储在 multiSignaturePositon 位置
     constructor(address multiSignature) public {
         require(multiSignature != address(0),"multiSignatureClient : Multiple signature contract address is zero!");
         saveValue(multiSignaturePositon,uint256(multiSignature));
@@ -18,6 +18,20 @@ contract multiSignatureClient{
 
     function getMultiSignatureAddress()public view returns (address){
         return address(getValue(multiSignaturePositon));
+    }
+
+    // 直接存储在 storge 的卡槽（slot）里面
+    function saveValue(uint256 position,uint256 value) internal
+    {
+        assembly {
+            sstore(position, value)
+        }
+    }
+    // 从卡槽（slot） 读取数据
+    function getValue(uint256 position) internal view returns (uint256 value) {
+        assembly {
+            value := sload(position)
+        }
     }
 
     // 是否有效请求，必须多签账户的 limitedSignNum 个账户同意
@@ -39,17 +53,4 @@ contract multiSignatureClient{
         require(newIndex > defaultIndex, "multiSignatureClient : This tx is not aprroved");
     }
 
-    // 直接存储在 storge 的卡槽（slot）里面
-    function saveValue(uint256 position,uint256 value) internal
-    {
-        assembly {
-            sstore(position, value)
-        }
-    }
-    // 从卡槽（slot） 读取数据
-    function getValue(uint256 position) internal view returns (uint256 value) {
-        assembly {
-            value := sload(position)
-        }
-    }
 }

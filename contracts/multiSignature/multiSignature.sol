@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 
-import "./multiSignatureClient.sol";
+import "./multiSignatureClient.sol" ;
 
 library whiteListAddress{
     // add whiteList
@@ -27,6 +27,7 @@ library whiteListAddress{
         }
         return false;
     }
+
     function isEligibleAddress(address[] memory whiteList,address temp) internal pure returns (bool){
         uint256 len = whiteList.length;
         for (uint256 i=0;i<len;i++){
@@ -53,12 +54,15 @@ contract multiSignature  is multiSignatureClient {
     }
     // 权限（请求地址-> 调用的合约地址）
     mapping(bytes32=>signatureInfo[]) public signatureMap;
+
     event TransferOwner(address indexed sender,address indexed oldOwner,address indexed newOwner);
     event CreateApplication(address indexed from,address indexed to,bytes32 indexed msgHash);
     event SignApplication(address indexed from,bytes32 indexed msgHash,uint256 index);
     event RevokeApplication(address indexed from,bytes32 indexed msgHash,uint256 index);
 
     //==========================  设置和修改签名管理人员地址 =========================
+    // 初始化管理员 owners 和 最低签名用户数
+    //  multiSignatureClient(address(this))  : 显式调用父合约 multiSignatureClient 的构造函数，并将 _multiSignature 参数传递给它
     constructor(address[] memory owners,uint256 limitedSignNum) multiSignatureClient(address(this)) public {
         require(owners.length>=limitedSignNum,"Multiple Signature : Signature threshold is greater than owners' length!");
         signatureOwners = owners;
@@ -71,7 +75,8 @@ contract multiSignature  is multiSignatureClient {
         emit TransferOwner(msg.sender,signatureOwners[index],newOwner);
         signatureOwners[index] = newOwner;
     }
-    // 重写 onlyOwner ： 
+
+    // 重写 onlyOwner ： 是不是管理员之一： signatureOwners
     modifier onlyOwner{
         require(signatureOwners.isEligibleAddress(msg.sender),"Multiple Signature : caller is not in the ownerList!");
         _;
@@ -79,15 +84,19 @@ contract multiSignature  is multiSignatureClient {
     
     //==========================  用户申请权限（签名）/管理员签名权限 相关 =========================
     // 创建申请，请求签证
+    // signatureInfo[] 是数组的意思是： 允许多次申请，只要有一次通过就可以了
     function createApplication(address to) external returns(uint256) {
         bytes32 msghash = getApplicationHash(msg.sender,to);
         uint256 index = signatureMap[msghash].length;
+        // 创建一个起始长度为0的可变数组
+        // 创建 一个固定长度为5的数组：  new address[5]()
         signatureMap[msghash].push(signatureInfo(msg.sender,new address[](0)));
         emit CreateApplication(msg.sender,to,msghash);
         return index;
     }
 
     // 管理员签名（某个申请）
+    // onlyOwner: 是管理员之一
     // defaultIndex
     function signApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit SignApplication(msg.sender,msghash,defaultIndex);
@@ -101,7 +110,7 @@ contract multiSignature  is multiSignatureClient {
         signatureMap[msghash][defaultIndex].signatures.removeWhiteListAddress(msg.sender);
     }
    
-    // 查询是否有足够的签名
+    // 查询有没有通过的签名
     function getValidSignature(bytes32 msghash,uint256 lastIndex) external view returns(uint256){
         signatureInfo[] storage info = signatureMap[msghash];
         for (uint256 i=lastIndex;i<info.length;i++){
@@ -125,6 +134,7 @@ contract multiSignature  is multiSignatureClient {
         return keccak256(abi.encodePacked(from, to));
     }
 
+    // 请求的有效性检查，防止数组角标越界
     modifier validIndex(bytes32 msghash,uint256 index){
         // 同意管理员数目，要小于总的
         require(index<signatureMap[msghash].length,"Multiple Signature : Message index is overflow!");
