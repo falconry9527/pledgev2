@@ -32,6 +32,7 @@ contract multiSignatureClient{
             value := callvalue()
         }
         // 权限申请：msg.sende-> address(this) 的所有权限
+        // 用户对本合约的权限
         bytes32 msgHash = keccak256(abi.encodePacked(msg.sender, address(this)));
         address multiSign = getMultiSignatureAddress();
         uint256 newIndex = IMultiSignature(multiSign).getValidSignature(msgHash,defaultIndex);

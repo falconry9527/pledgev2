@@ -5,7 +5,6 @@ pledge V2 contract
 ## 各个合约的作用
 ```
 PledgePool: 借贷主协议
-
 ```
 
 ## PledgePool 安全
@@ -21,5 +20,4 @@ MultiSignatureClient: 多签工具
  mapping(bytes32=>signatureInfo[]) public signatureMap;
 
  
-
 ```

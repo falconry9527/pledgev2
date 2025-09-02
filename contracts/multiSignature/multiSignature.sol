@@ -46,7 +46,7 @@ contract multiSignature  is multiSignatureClient {
     uint256 public threshold;
     // 申请的多签信息
     struct signatureInfo {
-        // 合约地址
+        // 申请用户的地址
         address applicant;
         // 多签成员
         address[] signatures;
@@ -71,7 +71,7 @@ contract multiSignature  is multiSignatureClient {
         emit TransferOwner(msg.sender,signatureOwners[index],newOwner);
         signatureOwners[index] = newOwner;
     }
-    // 重写 onlyOwner ，
+    // 重写 onlyOwner ： 
     modifier onlyOwner{
         require(signatureOwners.isEligibleAddress(msg.sender),"Multiple Signature : caller is not in the ownerList!");
         _;
@@ -88,8 +88,10 @@ contract multiSignature  is multiSignatureClient {
     }
 
     // 管理员签名（某个申请）
+    // defaultIndex
     function signApplication(bytes32 msghash) external onlyOwner validIndex(msghash,defaultIndex){
         emit SignApplication(msg.sender,msghash,defaultIndex);
+        // 把管理员的地址加到签名列表
         signatureMap[msghash][defaultIndex].signatures.addWhiteListAddress(msg.sender);
     }
 
@@ -99,7 +101,7 @@ contract multiSignature  is multiSignatureClient {
         signatureMap[msghash][defaultIndex].signatures.removeWhiteListAddress(msg.sender);
     }
    
-    
+    // 查询是否有足够的签名
     function getValidSignature(bytes32 msghash,uint256 lastIndex) external view returns(uint256){
         signatureInfo[] storage info = signatureMap[msghash];
         for (uint256 i=lastIndex;i<info.length;i++){
@@ -124,7 +126,7 @@ contract multiSignature  is multiSignatureClient {
     }
 
     modifier validIndex(bytes32 msghash,uint256 index){
-        // 同意管理员 数目，要小于总的
+        // 同意管理员数目，要小于总的
         require(index<signatureMap[msghash].length,"Multiple Signature : Message index is overflow!");
         _;
     }

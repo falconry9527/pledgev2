@@ -2,14 +2,12 @@
 pledge V2 contract
 
 ## 本地运行
-
 ```
 npm install
 npx hardhat compile
 npx hardhat test tests/DebtToken.test.js 
 npx hardhat test tests/BscPledgeOracle.test.js
 npx hardhat test tests/PledgePool.test.js
-
 ```
 
 ## 部署 multiSignature 到 sepolia
