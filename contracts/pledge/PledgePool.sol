@@ -10,7 +10,7 @@ import "../interface/IUniswapV2Router02.sol";
 import "../multiSignature/multiSignatureClient.sol";
 
 // multiSignatureClient 多签账户 :validCall
-// ReentrancyGuard 重入攻击： nonReentrant
+// ReentrancyGuard 重入攻击:  nonReentrant
 // SafeTransfer  安全装置 getPayableAmount _redeem
 contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
@@ -47,7 +47,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         uint256 lendSupply;         // 当前实际存款的借款
         uint256 borrowSupply;       // 当前实际存款的借款
         uint256 martgageRate;       // 池的抵押率，单位是1e8 (1e8)
-        address lendToken;          // 借款方代币地址 (比如 BUSD..)
+        address lendToken;          // 出借方代币地址 (比如 BUSD..)
         address borrowToken;        // 借款方代币地址 (比如 BTC..)
         PoolState state;            // 状态 'MATCH, EXECUTION, FINISH, LIQUIDATION, UNDONE'
         IDebtToken spCoin;          // sp_token的erc20地址 (比如 spBUSD_1..)
@@ -79,7 +79,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     // Info of each user that stakes tokens.  {user.address : {pool.index : user.borrowInfo}}
     mapping (address => mapping (uint256 => BorrowInfo)) public userBorrowInfo;
 
-    // 借款用户信息
+    // 存款用户信息
     struct LendInfo {
         uint256 stakeAmount;          // 当前借款的质押金额
         uint256 refundAmount;         // 超额退款金额
@@ -89,7 +89,6 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
     // Info of each user that stakes tokens.  {user.address : {pool.index : user.lendInfo}}
     mapping (address => mapping (uint256 => LendInfo)) public userLendInfo;
-
     // 事件
     // 存款借出事件，from是借出者地址，token是借出的代币地址，amount是借出的数量，mintAmount是生成的数量
     event DepositLend(address indexed from,address indexed token,uint256 amount,uint256 mintAmount); 
@@ -144,6 +143,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     /**
      * @dev Set the lend fee and borrow fee
      * @notice Only allow administrators to operate
+     * 设置手续费: 多签 validCall
      */
     function setFee(uint256 _lendFee,uint256 _borrowFee) validCall external{
         lendFee = _lendFee;
@@ -154,6 +154,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     /**
      * @dev Set swap router address, example pancakeswap or babyswap..
      * @notice Only allow administrators to operate
+     * 设置路由地址: 多签 validCall
      */
     function setSwapRouterAddress(address _swapRouter) validCall external{
         require(_swapRouter != address(0), "Is zero address");
@@ -190,6 +191,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     /**
      * @dev 创建一个新的借贷池。函数接收一系列参数，包括结算时间、结束时间、利率、最大供应量、抵押率、借款代币、借出代币、SP代币、JP代币和自动清算阈值。
      *  Can only be called by the owner.
+     * 2个代币地址的作用
+     * _spToken: 存款人存款之后获得的凭证合约地址
+     * _jpToken: 借款人质押之后获得的凭证合约地址
      */
     function createPoolInfo(uint256 _settleTime,  uint256 _endTime, uint64 _interestRate,
                         uint256 _maxSupply, uint256 _martgageRate, address _lendToken, address _borrowToken,
@@ -228,7 +232,8 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             liquidationAmounBorrow:0
         }));
     }
-      /**
+
+    /**
      * @dev Get pool state
      * @notice returned is an int integer
      */
@@ -237,7 +242,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         return uint256(pool.state);
     }
 
-       /**
+    /**
      * @dev 存款人执行存款操作
      * @notice 池状态必须为MATCH
      * @param _pid 是池索引
@@ -264,7 +269,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit DepositLend(msg.sender, pool.lendToken, _stakeAmount, amount);
     }
 
-       /**
+    /**
      * @dev 退还过量存款给存款人
      * @notice 池状态不等于匹配和未完成
      * @param _pid 是池索引
@@ -314,7 +319,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit ClaimLend(msg.sender, pool.borrowToken, spAmount); // 触发领取借款事件
     }
 
-        /**
+    /**
      * @dev 存款人取回本金和利息
      * @notice 池的状态可能是完成或清算
      * @param _pid 是池索引
@@ -350,7 +355,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         }
     }
 
-       /**
+    /**
      * @dev 紧急提取贷款
      * @notice 池状态必须是未完成
      * @param _pid 是池索引
@@ -372,7 +377,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
 
 
-       /**
+    /**
      * @dev 借款人质押操作
      * @param _pid 是池子索引
      * @param _stakeAmount 是用户质押的数量
@@ -398,7 +403,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit DepositBorrow(msg.sender, pool.borrowToken, _stakeAmount, amount); // 触发质押借款事件
     }
 
-        /**
+    /**
      * @dev 退还给借款人的过量存款，当借款人的质押量大于0，且借款供应量减去结算借款量大于0，且借款人没有退款时，计算退款金额并进行退款。
      * @notice 池状态不等于匹配和未完成
      * @param _pid 是池状态
@@ -423,7 +428,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit RefundBorrow(msg.sender, pool.borrowToken, refundAmount); // 触发退款事件
     }
 
-       /**
+    /**
      * @dev 借款人接收 sp_token 和贷款资金
      * @notice 池状态不等于匹配和未完成
      * @param _pid 是池状态
@@ -450,7 +455,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit ClaimBorrow(msg.sender, pool.borrowToken, jpAmount);
     }
 
-       /**
+    /**
      * @dev 借款人提取剩余的保证金，这个函数首先检查提取的金额是否大于0，然后销毁相应数量的JPtoken。接着，它计算JPtoken的份额，并根据池的状态（完成或清算）进行相应的操作。如果池的状态是完成，它会检查当前时间是否大于结束时间，然后计算赎回金额并进行赎回。如果池的状态是清算，它会检查当前时间是否大于匹配时间，然后计算赎回金额并进行赎回。
      * @param _pid 是池状态
      * @param _jpAmount 是用户销毁JPtoken的数量
@@ -483,7 +488,8 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             emit WithdrawBorrow(msg.sender, pool.borrowToken, _jpAmount, redeemAmount);
         }
     }
-       /**
+
+    /**
      * @dev 紧急借款提取
      * @notice 在极端情况下，总存款为0，或者总保证金为0，在某些极端情况下，如总存款为0或总保证金为0时，借款者可以进行紧急提取。首先，代码会获取池子的基本信息和借款者的借款信息，然后检查借款供应和借款者的质押金额是否大于0，以及借款者是否已经进行过退款。如果这些条件都满足，那么就会执行赎回操作，并标记借款者已经退款。最后，触发一个紧急借款提取的事件。
      * @param _pid 是池子的索引
@@ -515,7 +521,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         return block.timestamp > poolBaseInfo[_pid].settleTime;
     }
 
-       /**
+    /**
      * @dev  结算
      * @param _pid 是池子的索引
      */
@@ -566,7 +572,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         return block.timestamp > poolBaseInfo[_pid].endTime;
     }
 
-       /**
+    /**
      * @dev 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
      * @param _pid 是池子的索引
      */
@@ -624,7 +630,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
 
-      /**
+    /**
      * @dev 检查清算条件,它首先获取了池子的基础信息和数据信息，然后计算了保证金的当前价值和清算阈值，最后比较了这两个值，如果保证金的当前价值小于清算阈值，那么就满足清算条件，函数返回true，否则返回false。
      * @param _pid 是池子的索引
      */
@@ -640,7 +646,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         return borrowValueNow < valueThreshold; // 如果保证金当前价值小于清算阈值，则返回true，否则返回false
     }
 
-        /**
+    /**
      * @dev 清算
      * @param _pid 是池子的索引
      */
@@ -681,7 +687,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
 
-      /**
+    /**
      * @dev 费用计算,计算并赎回费用。首先，它计算费用，这是通过乘以费率并除以基数来完成的。如果计算出的费用大于0，它将从费用地址赎回相应的费用。最后，它返回的是原始金额减去费用。
      */
     function redeemFees(uint256 feeRatio,address token,uint256 amount) internal returns (uint256){
@@ -758,7 +764,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         require(success && (data.length == 0 || abi.decode(data, (bool))), "!safeApprove");
     }
 
-       /**
+    /**
      * @dev 获取最新的预言机价格
      */
     function getUnderlyingPriceView(uint256 _pid) public view returns(uint256[2]memory){
