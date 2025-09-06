@@ -50,8 +50,8 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         uint256 endTime;            // 结束时间
         uint256 interestRate;       // 池的固定利率，单位是1e8 (1e8)
         uint256 maxSupply;          // 池的最大限额
-        uint256 lendSupply;         // 当前实际存款的借款
-        uint256 borrowSupply;       // 当前实际存款的借款
+        uint256 lendSupply;         // 当前实际存入的存款
+        uint256 borrowSupply;       // 当前实际借出的借款
         uint256 martgageRate;       // 池的抵押率，单位是1e8 (1e8)
         address lendToken;          // 出借方代币地址 (比如 BUSD..)
         address borrowToken;        // 借款方代币地址 (比如 BTC..)
@@ -260,6 +260,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         LendInfo storage lendInfo = userLendInfo[msg.sender][_pid];
         // 边界条件
         require(_stakeAmount <= (pool.maxSupply).sub(pool.lendSupply), "depositLend: 数量超过限制");
+        // 存入存款，并返回金额
         uint256 amount = getPayableAmount(pool.lendToken,_stakeAmount);
         require(amount > minAmount, "depositLend: 少于最小金额");
         // 保存存款用户信息
@@ -382,8 +383,6 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         emit EmergencyLendWithdrawal(msg.sender, pool.lendToken, lendInfo.stakeAmount); // 触发紧急贷款提款事件
     }
 
-
-
     /**
      * @dev 借款人质押操作
      * @param _pid 是池子索引
@@ -393,7 +392,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 基础信息
         PoolBaseInfo storage pool = poolBaseInfo[_pid]; // 获取池子基础信息
         BorrowInfo storage borrowInfo = userBorrowInfo[msg.sender][_pid]; // 获取用户借款信息
-        // 动作
+        // 存入 质押代币，并获取金额
         uint256 amount = getPayableAmount(pool.borrowToken, _stakeAmount); // 获取应付金额
         require(amount > 0, 'depositBorrow: deposit amount is zero'); // 要求质押金额大于0
         // 保存用户信息
@@ -436,7 +435,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
     /**
-     * @dev 借款人接收 sp_token 和贷款资金
+     * @dev 借款人接收 sp_token 和 贷款资金
      * @notice 池状态不等于匹配和未完成
      * @param _pid 是池状态
      */
@@ -448,14 +447,17 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 限制
         require(borrowInfo.stakeAmount > 0, "claimBorrow: 没有索取 jp_token");
         require(!borrowInfo.hasNoClaim,"claimBorrow: 再次索取");
+        // 份额=用户借款金额/池子总的借款金额
+        uint256 userShare = borrowInfo.stakeAmount.mul(calDecimal).div(pool.borrowSupply);
         // 总 jp 数量 = settleAmountLend * martgageRate
         uint256 totalJpAmount = data.settleAmountLend.mul(pool.martgageRate).div(baseDecimal);
-        uint256 userShare = borrowInfo.stakeAmount.mul(calDecimal).div(pool.borrowSupply);
+        // 用户 jp 数量 = totalJpAmount * 份额
         uint256 jpAmount = totalJpAmount.mul(userShare).div(calDecimal);
         // 铸造 jp token
         pool.jpCoin.mint(msg.sender, jpAmount);
         // 索取贷款资金
         uint256 borrowAmount = data.settleAmountLend.mul(userShare).div(calDecimal);
+        // 借款打入借款人
         _redeem(msg.sender,pool.lendToken,borrowAmount);
         // 更新用户信息
         borrowInfo.hasNoClaim = true;
@@ -463,7 +465,10 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
     /**
-     * @dev 借款人提取剩余的保证金，这个函数首先检查提取的金额是否大于0，然后销毁相应数量的JPtoken。接着，它计算JPtoken的份额，并根据池的状态（完成或清算）进行相应的操作。如果池的状态是完成，它会检查当前时间是否大于结束时间，然后计算赎回金额并进行赎回。如果池的状态是清算，它会检查当前时间是否大于匹配时间，然后计算赎回金额并进行赎回。
+     * @dev 借款人提取剩余的保证金，这个函数首先检查提取的金额是否大于0，然后销毁相应数量的JPtoken。
+     * 接着，它计算JPtoken的份额，并根据池的状态（完成或清算）进行相应的操作。
+     * 如果池的状态是完成，它会检查当前时间是否大于结束时间，然后计算赎回金额并进行赎回。
+     * 如果池的状态是清算，它会检查当前时间是否大于匹配时间，然后计算赎回金额并进行赎回。
      * @param _pid 是池状态
      * @param _jpAmount 是用户销毁JPtoken的数量
      */
@@ -544,20 +549,21 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         if (pool.lendSupply > 0 && pool.borrowSupply > 0) {
             // 获取标的物价格
             uint256[2]memory prices = getUnderlyingPriceView(_pid);
+            // 1. 根据借款总额 * 抵押率，算出对应的存款金额 actualValue
             // 总保证金价值（相对存款代币） = 保证金数量 * 比值 (比值 = 抵押资产/存款资产)
             uint256 totalValue = pool.borrowSupply.mul(prices[1].mul(calDecimal).div(prices[0])).div(calDecimal);
             // 最大存款金额 = 总保证金价值/抵押率
             uint256 actualValue = totalValue.mul(baseDecimal).div(pool.martgageRate);
-
             if (pool.lendSupply > actualValue){
-                // 总存款大于总借出
+                // 总存款大于总借出，以借款总额为最低标准,更新 settleAmountLend，settleAmountBorrow
                 data.settleAmountLend = actualValue;
                 data.settleAmountBorrow = pool.borrowSupply;
             } else {
-                // 总存款小于总借出
+                // 总存款小于总借出，以存款总额为最低标准，更新 settleAmountLend，settleAmountBorrow
                 data.settleAmountLend = pool.lendSupply;
                 data.settleAmountBorrow = pool.lendSupply.mul(pool.martgageRate).div(prices[1].mul(baseDecimal).div(prices[0]));
             }
+            // 多余的钱，用户可以调用 refundLend 和 refundBorrow 进行退款
             // 更新池子状态
             pool.state = PoolState.EXECUTION;
             // 触发事件
@@ -621,7 +627,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             // 贷款费
             _redeem(feeAddress,pool.lendToken, feeAmount);
             data.finishAmountLend = amountIn.sub(feeAmount);
-        }else {
+        } else {
             data.finishAmountLend = amountIn;
         }
 
