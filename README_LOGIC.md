@@ -27,7 +27,7 @@ BscPledgeOracle : charlink 获取币子价格
 depositLend :  存款人执行存款操作
 depositBorrow : 借款人质押操作
 
-----------------settle之后的操作--------------------
+---------------- match（settle方法设置）状态的操作--------------------
 存款人:
 refundLend : 退还过量存款给存款人
 claimLend : 存款人领取 sp_token
@@ -35,13 +35,13 @@ claimLend : 存款人领取 sp_token
 refundBorrow : 退还给借款人的过量存款
 claimBorrow : 借款人接收 sp_token 和贷款资金
 
-----------------finish/liquidate 之后的操作--------------------
-withdrawLend : 存款人取回本金和利息
-withdrawBorrow : 借款人提取剩余的保证金
-
-----------------UNDO--------------------
+----------------UNDO（settle方法设置）--------------------
 emergencyLendWithdrawal : 存款人紧急提取贷款
 emergencyBorrowWithdrawal : 借款人 紧急借款提取
+
+----------------finish/liquidate（finish/liquidate方法设置） 状态的操作--------------------
+withdrawLend : 存款人取回本金和利息
+withdrawBorrow : 借款人提取剩余的保证金
 
 ----------------管理员--------------------
 createPoolInfo : 创建池子
