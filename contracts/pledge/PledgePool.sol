@@ -20,11 +20,16 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     uint256 constant internal calDecimal = 1e18;
     // Based on the decimal of the commission and interest、    // default decimal 10的18次方
     // default decimal 10的8次方
+    // 抵押率（martgageRate）的基础值
     uint256 constant internal baseDecimal = 1e8;
     uint256 public minAmount = 100e18;
     // one years
     uint256 constant baseYear = 365 days;
-
+    // MATCH : 初始化状态
+    // EXECUTION : 执行状态（settle）
+    // UNDONE : 未完成状态 : 没有结款借款（settle）
+    // FINISH : 完成状态
+    // FIQUIDATION : 清算状态
     enum PoolState{ MATCH, EXECUTION, FINISH, LIQUIDATION, UNDONE }
     PoolState constant defaultChoice = PoolState.MATCH;
 
@@ -539,17 +544,17 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         if (pool.lendSupply > 0 && pool.borrowSupply > 0) {
             // 获取标的物价格
             uint256[2]memory prices = getUnderlyingPriceView(_pid);
-            // 总保证金价值 = 保证金数量 * 保证金价格
+            // 总保证金价值（相对存款代币） = 保证金数量 * 比值 (比值 = 抵押资产/存款资产)
             uint256 totalValue = pool.borrowSupply.mul(prices[1].mul(calDecimal).div(prices[0])).div(calDecimal);
-            // 转换为稳定币价值
-            // 池的抵押率，单位是1e8 (1e8)
+            // 最大存款金额 = 总保证金价值/抵押率
             uint256 actualValue = totalValue.mul(baseDecimal).div(pool.martgageRate);
+
             if (pool.lendSupply > actualValue){
-                // 总借款大于总借出
+                // 总存款大于总借出
                 data.settleAmountLend = actualValue;
                 data.settleAmountBorrow = pool.borrowSupply;
             } else {
-                // 总借款小于总借出
+                // 总存款小于总借出
                 data.settleAmountLend = pool.lendSupply;
                 data.settleAmountBorrow = pool.lendSupply.mul(pool.martgageRate).div(prices[1].mul(baseDecimal).div(prices[0]));
             }
