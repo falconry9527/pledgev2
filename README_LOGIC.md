@@ -41,7 +41,7 @@ settle : 启动一个池子，按比例存入存款和借出贷款（启动的�
 data.settleAmountLend = actualValue;
 data.settleAmountBorrow = pool.borrowSupply;
 
----------------- match（settle方法设置）状态的操作 --
+---------------- match状态的操作 --
 存款人:
 refundLend : 退还过量存款给存款人 
 claimLend : 存款人领取 sp_token
@@ -53,17 +53,26 @@ refundLend 多了计算份额的步骤 (refundBorrow一样的)
 计算份额: 用户按照比例退款（一个人存入池子存入了200万(pool.lendSupply)，
 但是，实际借出了100万(data.settleAmountLend)，那么多存入的100万，就按照比例退给每个用户）
 
----------------- UNDO（settle方法设置） --
+---------------- UNDO状态的操作--
 emergencyLendWithdrawal : 存款人紧急提取贷款
 emergencyBorrowWithdrawal : 借款人紧急借款提取
-这两个方法和 refundLend/refundBorrow 基本一致，分开主要是更省gas
+这两个方法和 refundLend/refundBorrow 基本一致，分开主要是更省gas(没有计算份额部分)
 
+---------------- finish方法 --
+finish： 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
 
----------------- finish/liquidate（finish/liquidate方法设置）状态的操作 --
+---------------- liquidate方法 --
+
+---------------- finish/liquidate 状态的操作 --
 withdrawLend : 存款人取回本金和利息 : 销毁 sp_token ，按照份额退款
 withdrawBorrow : 借款人提取剩余的保证金 : 销毁 jp_token ，按照份额退款
 
----------------- 管理员 --
+
+```
+
+## PledgePool 管理员方法
+```
+
 createPoolInfo : 创建池子
 settle : 结算
 finish : 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
@@ -71,15 +80,10 @@ liquidate : 清算
 checkoutLiquidate ： 是否到达清算阀值
 setPause : 设置合约是否暂停
 
-```
-
-## PledgePool核心方法
-```
-settle: 启动一个池子，按比例存入存款和借出贷款（启动的时候，多的存款将退还）
-checkoutLiquidate : 不断调用，如果到达清算阀值，就会调用清算逻辑 liquidate
-liquidate:  到达清算阀值的时候，由管理员调用
-finish: 借贷时间到期后，由管理员调用 
-
+settle: 结算：启动一个池子，按比例存入存款和借出贷款（启动的时候，多的存款将退还）
+checkoutLiquidate :是否到达清算阀值： 不断调用，如果到达清算阀值，就会调用清算逻辑 liquidate
+liquidate:  清算：到达清算阀值的时候，由管理员调用
+finish:  借贷时间到期后，由管理员调用 
 ```
 
 

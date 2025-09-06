@@ -615,7 +615,10 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 计算销售金额 = 贷款金额*(1+贷款费)
         uint256 sellAmount = lendAmount.mul(lendFee.add(baseDecimal)).div(baseDecimal);
 
-        // 执行交换操作
+        // 根据存款 dat.settleAmountLend ,利息 interest，借出手续费 lendFee , 计算出需要卖出的质押币的数量 sellAmount,
+        // 执行交换操作  : 卖出抵押币，买入存款币
+        // amountSell : 卖出的抵押币(BTC)
+        // amountIn : 进帐的存款币(USDT)
         (uint256 amountSell,uint256 amountIn) = _sellExactAmount(swapRouter,token0,token1,sellAmount);
 
         // 验证交换后的金额是否大于等于贷款金额
@@ -623,11 +626,13 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
         // 如果交换后的金额大于贷款金额，计算费用并赎回
         if (amountIn > lendAmount) {
+            // 如果卖出的金额大于贷款金额，合约收取手续费 lendAmount
             uint256 feeAmount = amountIn.sub(lendAmount) ;
-            // 贷款费
+            // 贷款手续费 转入到 手续费 钱包
             _redeem(feeAddress,pool.lendToken, feeAmount);
             data.finishAmountLend = amountIn.sub(feeAmount);
         } else {
+            // 反之，合约不收取手续费 lendAmount
             data.finishAmountLend = amountIn;
         }
 
