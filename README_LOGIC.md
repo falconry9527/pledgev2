@@ -21,10 +21,26 @@ BscPledgeOracle : charlink 获取币子价格
 
 ## PledgePool 逻辑
 ```
+存款人:
 depositLend :  存款人执行存款操作
 refundLend : 退还过量存款给存款人
-```
+claimLend : 存款人领取 sp_token
+withdrawLend : 存款人取回本金和利息
+emergencyLendWithdrawal : 存款人紧急提取贷款
 
+借款人:
+depositBorrow : 借款人质押操作
+refundBorrow : 退还给借款人的过量存款
+claimBorrow : 借款人接收 sp_token 和贷款资金
+withdrawBorrow : 借款人提取剩余的保证金
+emergencyBorrowWithdrawal : 借款人 紧急借款提取
+
+管理员：
+settle : 结算
+finish : 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
+liquidate ：清算
+setPause ： 设置合约是否暂停
+```
 
 ## PledgePool 安全
 ```

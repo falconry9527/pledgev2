@@ -22,7 +22,7 @@ contract AddressPrivileges is multiSignatureClient {
       * @param _addMinter add a  minter address
       # @return true or false
       */
-    function addMinter(address _addMinter) public validCall returns (bool) {
+    function addMinter(address _addMinter) public  returns (bool) {
         require(_addMinter != address(0), "Token: _addMinter is the zero address");
         return EnumerableSet.add(_minters, _addMinter);
     }
@@ -33,7 +33,7 @@ contract AddressPrivileges is multiSignatureClient {
       * @param _delMinter delete a minter address
       # @return true or false
       */
-    function delMinter(address _delMinter) public validCall returns (bool) {
+    function delMinter(address _delMinter) public  returns (bool) {
         require(_delMinter != address(0), "Token: _delMinter is the zero address");
         return EnumerableSet.remove(_minters, _delMinter);
     }

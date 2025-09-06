@@ -16,9 +16,10 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    // default decimal
+    // default decimal 10的18次方
     uint256 constant internal calDecimal = 1e18;
-    // Based on the decimal of the commission and interest
+    // Based on the decimal of the commission and interest、    // default decimal 10的18次方
+    // default decimal 10的8次方
     uint256 constant internal baseDecimal = 1e8;
     uint256 public minAmount = 100e18;
     // one years
@@ -256,7 +257,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         require(_stakeAmount <= (pool.maxSupply).sub(pool.lendSupply), "depositLend: 数量超过限制");
         uint256 amount = getPayableAmount(pool.lendToken,_stakeAmount);
         require(amount > minAmount, "depositLend: 少于最小金额");
-        // 保存借款用户信息
+        // 保存存款用户信息
         lendInfo.hasNoClaim = false;
         lendInfo.hasNoRefund = false;
         if (pool.lendToken == address(0)){
@@ -280,6 +281,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         LendInfo storage lendInfo = userLendInfo[msg.sender][_pid]; // 获取用户的出借信息
         // 限制金额
         require(lendInfo.stakeAmount > 0, "refundLend: not pledged"); // 需要用户已经质押了一定数量
+        // 存款金额> 结算金额
         require(pool.lendSupply.sub(data.settleAmountLend) > 0, "refundLend: not refund"); // 需要池中还有未退还的金额
         require(!lendInfo.hasNoRefund, "refundLend: repeat refund"); // 需要用户没有重复退款
         // 用户份额 = 当前质押金额 / 总金额
@@ -331,7 +333,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         require(_spAmount > 0, 'withdrawLend: 取款金额为零');
         // 销毁 sp_token
         pool.spCoin.burn(msg.sender,_spAmount);
-        // 计算销毁份额
+        // 计算销毁份额 结算时的实际出借金额
         uint256 totalSpAmount = data.settleAmountLend;
         // sp份额 = _spAmount/totalSpAmount
         uint256 spShare = _spAmount.mul(calDecimal).div(totalSpAmount);
@@ -540,6 +542,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             // 总保证金价值 = 保证金数量 * 保证金价格
             uint256 totalValue = pool.borrowSupply.mul(prices[1].mul(calDecimal).div(prices[0])).div(calDecimal);
             // 转换为稳定币价值
+            // 池的抵押率，单位是1e8 (1e8)
             uint256 actualValue = totalValue.mul(baseDecimal).div(pool.martgageRate);
             if (pool.lendSupply > actualValue){
                 // 总借款大于总借出

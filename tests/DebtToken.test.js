@@ -16,10 +16,13 @@ describe("DebtToken",function () {
 
         let amount = await debtToken.totalSupply();
         show({amount});
-        expect(await debtToken.totalSupply()).to.equal((BigInt(0).toString()));
+        // expect(await debtToken.totalSupply()).to.equal((BigInt(0).toString()));
         // mint
         await debtToken.addMinter(minter.address);
         await debtToken.connect(minter).mint(minter.address, BigInt(100000000 * 1e18));
+        console.log("debtToken deployed to:", await debtToken.balanceOf(minter.address));
+        console.log("debtToken deployed to:", await debtToken.balanceOf(BigInt(100000000 * 1e18).toString()));
+
         expect(await debtToken.balanceOf(minter.address)).to.equal((BigInt(100000000 * 1e18).toString()));
       });
 

@@ -16,9 +16,12 @@ contract SafeTransfer{
      * @param token of address
      * @param amount of amount
      * @return return amount
+     * 
+     * 把 代币 转入合约，并返回金额
      */
     function getPayableAmount(address token,uint256 amount) internal returns (uint256) {
         if (token == address(0)){
+            // ETH 自动带入，不用转账
             amount = msg.value;
         }else if (amount > 0){
             IERC20 oToken = IERC20(token);
