@@ -30,10 +30,10 @@ BscPledgeOracle
 流程 : 参考 framework.png
 ----------------createPoolInfo之后的操作
 向池子里面存款/借款 : 
-depositLend :  存款人执行存款操作 getPayableAmount：存入存款并获取金额      
-操作数据： lendInfo.stakeAmount, pool.lendSupply 
-depositBorrow : 借款人质押操作 getPayableAmount：存入质押代币并获取金额    
-操作数据： borrowInfo.stakeAmount,pool.borrowSupply 
+depositLend :  存款人执行存款操作 getPayableAmount:存入存款并获取金额      
+操作数据: lendInfo.stakeAmount, pool.lendSupply 
+depositBorrow : 借款人质押操作 getPayableAmount:存入质押代币并获取金额    
+操作数据: borrowInfo.stakeAmount,pool.borrowSupply 
 
 ---------------- settle方法 --
 settle : 启动一个池子，按比例存入存款和借出贷款（启动的时候，多的存款将退还）
@@ -59,16 +59,23 @@ emergencyBorrowWithdrawal : 借款人紧急借款提取
 这两个方法和 refundLend/refundBorrow 基本一致，分开主要是更省gas(没有计算份额部分)
 
 ---------------- finish方法 --
-finish： 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
+finish: 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
+操作数据:
+data.finishAmountLend
+data.finishAmountBorrow 
 
 ---------------- liquidate方法 --
+liquidate : 清算
+操作数据:
+data.liquidationAmounLend 
+data.liquidationAmounBorrow
 
 ---------------- finish/liquidate 状态的操作 --
 withdrawLend : 存款人取回本金和利息 : 销毁 sp_token ，按照份额退款
 withdrawBorrow : 借款人提取剩余的保证金 : 销毁 jp_token ，按照份额退款
 
-
 ```
+
 
 ## PledgePool 管理员方法
 ```
@@ -77,12 +84,12 @@ createPoolInfo : 创建池子
 settle : 结算
 finish : 完成一个借贷池的操作，包括计算利息、执行交换操作、赎回费用和更新池子状态等步骤。
 liquidate : 清算
-checkoutLiquidate ： 是否到达清算阀值
+checkoutLiquidate : 是否到达清算阀值
 setPause : 设置合约是否暂停
 
-settle: 结算：启动一个池子，按比例存入存款和借出贷款（启动的时候，多的存款将退还）
-checkoutLiquidate :是否到达清算阀值： 不断调用，如果到达清算阀值，就会调用清算逻辑 liquidate
-liquidate:  清算：到达清算阀值的时候，由管理员调用
+settle: 结算:启动一个池子，按比例存入存款和借出贷款（启动的时候，多的存款将退还）
+checkoutLiquidate :是否到达清算阀值: 不断调用，如果到达清算阀值，就会调用清算逻辑 liquidate
+liquidate:  清算:到达清算阀值的时候，由管理员调用
 finish:  借贷时间到期后，由管理员调用 
 ```
 

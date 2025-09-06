@@ -54,10 +54,10 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         uint256 borrowSupply;       // 当前实际借出的借款
         uint256 martgageRate;       // 池的抵押率，单位是1e8 (1e8)
         address lendToken;          // 出借方代币地址 (比如 BUSD..)
-        address borrowToken;        // 借款方代币地址 (比如 BTC..)
+        address borrowToken;        // 借款方代币地址 (比如 ETH..)
         PoolState state;            // 状态 'MATCH, EXECUTION, FINISH, LIQUIDATION, UNDONE'
         IDebtToken spCoin;          // sp_token的erc20地址 (比如 spBUSD_1..)
-        IDebtToken jpCoin;          // jp_token的erc20地址 (比如 jpBTC_1..)
+        IDebtToken jpCoin;          // jp_token的erc20地址 (比如 jpETH_1..)
         uint256 autoLiquidateThreshold; // 自动清算阈值 (触发清算阈值)
     }
     // total base pool.
@@ -478,7 +478,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         PoolDataInfo storage data = poolDataInfo[_pid];
         // 要求提取的金额大于0
         require(_jpAmount > 0, 'withdrawBorrow: withdraw amount is zero');
-        // 销毁jp token
+        // 销毁 jptoken
         pool.jpCoin.burn(msg.sender,_jpAmount);
         // jp份额
         uint256 totalJpAmount = data.settleAmountLend.mul(pool.martgageRate).div(baseDecimal);
@@ -488,6 +488,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             // 要求当前时间大于结束时间
             require(block.timestamp > pool.endTime, "withdrawBorrow: less than end time");
             uint256 redeemAmount = jpShare.mul(data.finishAmountBorrow).div(calDecimal);
+            // 退款动作 : 把剩余的 ETH 退给用户
+            // 如果 ETH 涨价了，那么卖出的ETH就少,那么退的 ETH 就多
+            // 如果 ETH 降价了，那么卖出的ETH就多,那么退的 ETH 就少
             _redeem(msg.sender,pool.borrowToken,redeemAmount);
             emit WithdrawBorrow(msg.sender, pool.borrowToken, _jpAmount, redeemAmount);
         }
@@ -612,12 +615,12 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 计算贷款金额 = 结算贷款金额 + 利息
         uint256 lendAmount = data.settleAmountLend.add(interest);
 
-        // 计算销售金额 = 贷款金额*(1+贷款费)
+        // 计算销售金额 = 贷款金额*(1+贷款费) = 结算贷款金额 + 利息+ 存款手续费
         uint256 sellAmount = lendAmount.mul(lendFee.add(baseDecimal)).div(baseDecimal);
 
         // 根据存款 dat.settleAmountLend ,利息 interest，借出手续费 lendFee , 计算出需要卖出的质押币的数量 sellAmount,
         // 执行交换操作  : 卖出抵押币，买入存款币
-        // amountSell : 卖出的抵押币(BTC)
+        // amountSell : 卖出的抵押币(ETH)
         // amountIn : 进帐的存款币(USDT)
         (uint256 amountSell,uint256 amountIn) = _sellExactAmount(swapRouter,token0,token1,sellAmount);
 
@@ -626,19 +629,21 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
         // 如果交换后的金额大于贷款金额，计算费用并赎回
         if (amountIn > lendAmount) {
-            // 如果卖出的金额大于贷款金额，合约收取手续费 lendAmount
+            // 如果卖出的金额大于贷款金额，合约收取手续费
             uint256 feeAmount = amountIn.sub(lendAmount) ;
-            // 贷款手续费 转入到 手续费 钱包
+            // 贷款手续费 转入到 手续费钱包
             _redeem(feeAddress,pool.lendToken, feeAmount);
-            data.finishAmountLend = amountIn.sub(feeAmount);
+            // finish存款金额
+            data.finishAmountLend = lendAmount ;
         } else {
             // 反之，合约不收取手续费 lendAmount
             data.finishAmountLend = amountIn;
         }
-
         // 计算剩余的借款金额并赎回借款费
         uint256 remianNowAmount = data.settleAmountBorrow.sub(amountSell);
+        // remianBorrowAmount=remianNowAmount-remianNowAmount* （borrowFee / baseDecimal）
         uint256 remianBorrowAmount = redeemFees(borrowFee,pool.borrowToken,remianNowAmount);
+        // finish借款金额
         data.finishAmountBorrow = remianBorrowAmount;
 
         // 更新池子状态为完成
