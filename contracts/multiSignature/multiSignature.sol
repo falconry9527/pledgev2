@@ -55,6 +55,8 @@ contract multiSignature  is multiSignatureClient {
     // 权限（请求地址-> 调用的合约地址）
     mapping(bytes32=>signatureInfo[]) public signatureMap;
 
+   // indexed 关键字用于事件（Event） 的参数声明，它是一个非常重要的功能，主要用于优化链上数据的检索和过滤
+   // 存储在日志的 topics 中，可以被高效地过滤和搜索，消耗更多的gass，最多定义3个
     event TransferOwner(address indexed sender,address indexed oldOwner,address indexed newOwner);
     event CreateApplication(address indexed from,address indexed to,bytes32 indexed msgHash);
     event SignApplication(address indexed from,bytes32 indexed msgHash,uint256 index);
