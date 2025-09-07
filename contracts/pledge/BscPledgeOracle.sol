@@ -8,9 +8,10 @@ import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
 
 contract BscPledgeOracle is multiSignatureClient {
-
+    // uint256(代币token) -> 语言机地址
     mapping(uint256 => AggregatorV3Interface) internal assetsMap;
     mapping(uint256 => uint256) internal decimalsMap;
+    // uint256(代币token) -> 代币价格
     mapping(uint256 => uint256) internal priceMap;
     uint256 internal decimals = 1;
 
@@ -89,6 +90,7 @@ contract BscPledgeOracle is multiSignatureClient {
     function getUnderlyingPrice(uint256 underlying) public view returns (uint256) {
         AggregatorV3Interface assetsPrice = assetsMap[underlying];
         if (address(assetsPrice) != address(0)){
+          // 存在该币种的预言机
             (, int price,,,) = assetsPrice.latestRoundData();
             uint256 tokenDecimals = decimalsMap[underlying];
             if (tokenDecimals < 18){
@@ -99,6 +101,7 @@ contract BscPledgeOracle is multiSignatureClient {
                 return uint256(price)/decimals;
             }
         }else {
+          // 不存在该币种的预言机
             return priceMap[underlying];
         }
     }
